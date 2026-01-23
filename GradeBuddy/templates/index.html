@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeBuddy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🎓 GradeBuddy</h1>
+                <p class="subtitle">Predicting student outcomes using supervised machine learning models.</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Form Section -->
+            <section class="form-section">
+                <div class="form-container">
+                    <h2 class="form-title">Enter Student Information</h2>
+                    <p class="form-description">Kindly share the required details so we can proceed further.</p>
+                    
+                    <form id="predictionForm" class="prediction-form">
+                        <!-- Study Hours Input -->
+                        <div class="input-group">
+                            <label for="study_hours" class="input-label">
+                                📚 Study Hours per Day
+                                <span class="label-hint">(0-24 hours)</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="study_hours" 
+                                name="study_hours" 
+                                class="input-field"
+                                placeholder="e.g., 6"
+                                min="0" 
+                                max="24" 
+                                step="0.5"
+                                required
+                            >
+                            <div class="input-help">How many hours does the student study per day?</div>
+                        </div>
+
+                        <!-- Attendance Input -->
+                        <div class="input-group">
+                            <label for="attendance" class="input-label">
+                                📅 Attendance Percentage
+                                <span class="label-hint">(0-100%)</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="attendance" 
+                                name="attendance" 
+                                class="input-field"
+                                placeholder="e.g., 85"
+                                min="0" 
+                                max="100" 
+                                step="1"
+                                required
+                            >
+                            <div class="input-help">What percentage of classes has the student attended?</div>
+                        </div>
+
+                        <!-- Previous Marks Input -->
+                        <div class="input-group">
+                            <label for="previous_marks" class="input-label">
+                                📊 Previous Marks
+                                <span class="label-hint">(0-100)</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="previous_marks" 
+                                name="previous_marks" 
+                                class="input-field"
+                                placeholder="e.g., 78"
+                                min="0" 
+                                max="100" 
+                                step="1"
+                                required
+                            >
+                            <div class="input-help">Student's marks from previous exams</div>
+                        </div>
+
+                        <!-- Assignment Completion Input -->
+                        <div class="input-group">
+                            <label for="assignment_completion" class="input-label">
+                                ✅ Assignment Completion
+                                <span class="label-hint">(0-100%)</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="assignment_completion" 
+                                name="assignment_completion" 
+                                class="input-field"
+                                placeholder="e.g., 90"
+                                min="0" 
+                                max="100" 
+                                step="1"
+                                required
+                            >
+                            <div class="input-help">Percentage of assignments completed by the student</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <span class="btn-text">Predict Performance</span>
+                            <span class="btn-loading" style="display: none;">
+                                <div class="spinner"></div>
+                                Analyzing...
+                            </span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-container">
+                    <h2 class="results-title">Prediction Results</h2>
+                    
+                    <!-- Prediction Result -->
+                    <div class="prediction-result" id="predictionResult">
+                        <div class="result-icon" id="resultIcon"></div>
+                        <div class="result-text">
+                            <h3 class="result-prediction" id="resultPrediction"></h3>
+                            <p class="result-confidence" id="resultConfidence"></p>
+                        </div>
+                    </div>
+
+                    <!-- Probability Breakdown -->
+                    <div class="probability-breakdown">
+                        <h4 class="breakdown-title">Probability Breakdown</h4>
+                        <div class="probability-bars">
+                            <div class="probability-item">
+                                <div class="prob-label">
+                                    <span class="prob-text">Pass</span>
+                                    <span class="prob-value" id="passProb">0%</span>
+                                </div>
+                                <div class="prob-bar">
+                                    <div class="prob-fill pass-fill" id="passFill"></div>
+                                </div>
+                            </div>
+                            <div class="probability-item">
+                                <div class="prob-label">
+                                    <span class="prob-text">Fail</span>
+                                    <span class="prob-value" id="failProb">0%</span>
+                                </div>
+                                <div class="prob-bar">
+                                    <div class="prob-fill fail-fill" id="failFill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Summary -->
+                    <div class="input-summary">
+                        <h4 class="summary-title">Input Summary</h4>
+                        <div class="summary-grid" id="inputSummary">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- New Prediction Button -->
+                    <button class="new-prediction-btn" id="newPredictionBtn">
+                        Make Another Prediction
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="error-section" id="errorSection" style="display: none;">
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <h3 class="error-title">Prediction Error</h3>
+                    <p class="error-message" id="errorMessage"></p>
+                    <button class="retry-btn" id="retryBtn">Try Again</button>
+                </div>
+            </section>
+        </main>
+
+        
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
