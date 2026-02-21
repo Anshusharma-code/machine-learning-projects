@@ -3,36 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>git init
-</title>
-
-    <!-- Link CSS -->
-    <link rel="stylesheet" href="/static/style.css">
+    <title>EstateValue - AI House Price Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .model-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .form-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .form-section h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .optional-section {
+            background: #f9f9f9;
+        }
+        .toggle-optional {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .toggle-optional:hover {
+            background: #0056b3;
+        }
+        .optional-fields {
+            display: none;
+        }
+        .optional-fields.show {
+            display: block;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .help-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
+    <h2>🏠 EstateValue</h2>
+    <p>AI-powered house price prediction using machine learning</p>
 
-    <h2>EstateValue</h2>
+    {% if model_info %}
+    <div class="model-info">
+        <strong>Model Info:</strong> {{ model_info.model_name }} | 
+        Features: {{ model_info.features_count }} | 
+        Scaling: {{ "Yes" if model_info.uses_scaling else "No" }}
+        {% if model_info.r2_score %}
+        | R² Score: {{ model_info.r2_score }}
+        {% endif %}
+    </div>
+    {% endif %}
 
     <form action="/predict" method="post">
+        <!-- Required Fields -->
+        <div class="form-section">
+            <h3>📋 Basic Information (Required)</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="area">Area (sqft) *</label>
+                    <input type="number" id="area" name="area" 
+                           placeholder="e.g. 1200" min="100" max="10000" required>
+                    <div class="help-text">Enter property area in square feet</div>
+                </div>
+                <div class="form-group">
+                    <label for="bedrooms">Bedrooms *</label>
+                    <input type="number" id="bedrooms" name="bedrooms" 
+                           placeholder="e.g. 3" min="1" max="20" required>
+                    <div class="help-text">Number of bedrooms</div>
+                </div>
+            </div>
+        </div>
 
-        <label for="area">Area (sqft)</label>
-        <input type="number" id="area" name="area" placeholder="e.g. 1200" required>
+        <!-- Optional Fields -->
+        <div class="form-section optional-section">
+            <button type="button" class="toggle-optional" onclick="toggleOptional()">
+                ⚙️ Show Advanced Options (Optional)
+            </button>
+            
+            <div class="optional-fields" id="optionalFields">
+                <h3>🏗️ Property Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bathrooms">Bathrooms</label>
+                        <input type="number" id="bathrooms" name="bathrooms" 
+                               placeholder="e.g. 2" min="1" max="10" step="0.5">
+                        <div class="help-text">Number of bathrooms</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="floors">Floors</label>
+                        <input type="number" id="floors" name="floors" 
+                               placeholder="e.g. 2" min="1" max="5">
+                        <div class="help-text">Number of floors</div>
+                    </div>
+                </div>
 
-        <label for="bedrooms">Bedrooms</label>
-        <input type="number" id="bedrooms" name="bedrooms" placeholder="e.g. 3" required>
+                <h3>📍 Location & Age</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age_years">Age (years)</label>
+                        <input type="number" id="age_years" name="age_years" 
+                               placeholder="e.g. 10" min="0" max="200">
+                        <div class="help-text">Property age in years</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="distance_city_km">Distance to City (km)</label>
+                        <input type="number" id="distance_city_km" name="distance_city_km" 
+                               placeholder="e.g. 8" min="0" max="100" step="0.1">
+                        <div class="help-text">Distance to city center</div>
+                    </div>
+                </div>
 
-        <button type="submit">Predict Price</button>
+                <h3>🏫 Amenities & Safety</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nearby_schools">Nearby Schools</label>
+                        <input type="number" id="nearby_schools" name="nearby_schools" 
+                               placeholder="e.g. 3" min="0" max="20">
+                        <div class="help-text">Number of schools within 2km</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="parking_spaces">Parking Spaces</label>
+                        <input type="number" id="parking_spaces" name="parking_spaces" 
+                               placeholder="e.g. 2" min="0" max="10">
+                        <div class="help-text">Number of parking spaces</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="crime_rate">Crime Rate</label>
+                        <input type="number" id="crime_rate" name="crime_rate" 
+                               placeholder="e.g. 3.5" min="0" max="10" step="0.1">
+                        <div class="help-text">Crime rate (0=safest, 10=highest)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="location_score">Location Score</label>
+                        <input type="number" id="location_score" name="location_score" 
+                               placeholder="e.g. 8" min="1" max="10">
+                        <div class="help-text">Overall location rating (1-10)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit">🔮 Predict Price</button>
     </form>
 
     {% if prediction_text %}
-        <div class="result">
+        <div class="result {{ 'success' if success else 'error' }}">
             {{ prediction_text }}
+            {% if model_info_text %}
+                <br><small>{{ model_info_text }}</small>
+            {% endif %}
         </div>
     {% endif %}
 
+    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em;">
+        <h4>💡 Tips for Better Predictions:</h4>
+        <ul>
+            <li>Fill in optional fields for more accurate predictions</li>
+            <li>Ensure all values are realistic and within reasonable ranges</li>
+            <li>The model works best for properties similar to training data</li>
+            <li>Consider local market conditions and recent trends</li>
+        </ul>
+    </div>
 </div>
+
+<script>
+function toggleOptional() {
+    const fields = document.getElementById('optionalFields');
+    const button = document.querySelector('.toggle-optional');
+    
+    if (fields.classList.contains('show')) {
+        fields.classList.remove('show');
+        button.textContent = '⚙️ Show Advanced Options (Optional)';
+    } else {
+        fields.classList.add('show');
+        button.textContent = '⚙️ Hide Advanced Options';
+    }
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const area = document.getElementById('area').value;
+    const bedrooms = document.getElementById('bedrooms').value;
+    
+    if (!area || !bedrooms) {
+        e.preventDefault();
+        alert('Please fill in all required fields (Area and Bedrooms)');
+        return false;
+    }
+    
+    if (parseFloat(area) <= 0 || parseInt(bedrooms) <= 0) {
+        e.preventDefault();
+        alert('Area and bedrooms must be positive numbers');
+        return false;
+    }
+});
+</script>
 
 </body>
 </html>
